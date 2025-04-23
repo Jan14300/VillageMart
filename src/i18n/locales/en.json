@@ -1,0 +1,102 @@
+{
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "email": "Email Address",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "orContinueWith": "Or continue with",
+    "continueWithGoogle": "Continue with Google",
+    "dontHaveAccount": "Don't have an account?",
+    "createAccount": "Create account"
+  },
+  "common": {
+    "welcome": "Welcome to Village Mart",
+    "tagline": "Delivering products to every rural corner",
+    "language": "Language",
+    "search": "Search products",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout",
+    "account": "My Account",
+    "cart": "Cart",
+    "orders": "My Orders",
+    "checkout": "Checkout"
+  },
+  "home": {
+    "featured": "Featured Products",
+    "categories": "Categories",
+    "offers": "Special Offers",
+    "deliveryCheck": "Check Delivery Availability",
+    "enterPincode": "Enter PIN code or village name",
+    "check": "Check"
+  },
+  "product": {
+    "price": "Price",
+    "quantity": "Quantity",
+    "addToCart": "Add to Cart",
+    "outOfStock": "Out of Stock",
+    "available": "Available",
+    "viewDetails": "View Details",
+    "deliveryTo": "Delivery available to",
+    "estimatedDelivery": "Estimated Delivery",
+    "days": "days",
+    "description": "Product Description",
+    "requestProduct": "Can't find what you need? Request it"
+  },
+  "cart": {
+    "yourCart": "Your Cart",
+    "emptyCart": "Your cart is empty",
+    "emptyCartMessage": "Looks like you haven't added any products to your cart yet.",
+    "continueShopping": "Continue Shopping",
+    "items": "{count} {count, plural, one {item} other {items}}",
+    "remove": "Remove",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "deliveryFee": "Delivery Fee",
+    "free": "FREE",
+    "freeDeliveryMessage": "Add {amount} more for free delivery",
+    "total": "Total",
+    "proceedToCheckout": "Proceed to Checkout",
+    "addedToCart": "Product added to cart"
+  },
+  "checkout": {
+    "summary": "Order Summary",
+    "items": "Items",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "total": "Total",
+    "address": "Delivery Address",
+    "village": "Village/Locality",
+    "landmark": "Landmark",
+    "nearestCity": "Nearest City/Town",
+    "pincode": "PIN Code",
+    "payment": "Payment Method",
+    "cod": "Cash on Delivery",
+    "upi": "UPI",
+    "proceed": "Place Order"
+  },
+  "order": {
+    "status": "Order Status",
+    "placed": "Order Placed",
+    "confirmed": "Order Confirmed",
+    "shipped": "Shipped",
+    "outForDelivery": "Out for Delivery",
+    "delivered": "Delivered",
+    "track": "Track Order",
+    "cancel": "Cancel Order",
+    "id": "Order ID",
+    "date": "Order Date",
+    "items": "Items"
+  },
+  "account": {
+    "profile": "Profile",
+    "name": "Name",
+    "phone": "Phone Number",
+    "addresses": "My Addresses",
+    "addAddress": "Add New Address",
+    "orderHistory": "Order History",
+    "settings": "Settings"
+  }
+}
