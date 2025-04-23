@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { verifyPaymentSignature } from '@/lib/payment';
 
 // Use environment variables instead of hardcoded values
 const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_gGgY5VEwsyhoK2';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'CrzJMdJIAxGQnlFjMnGPcGlH';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'KoacLYFOgTtecv47PB8x7HAM';
 
 // For development/testing we'll use a mock order approach
-const MOCK_MODE = true;
+// Setting to false to use actual Razorpay API
+const MOCK_MODE = false;
 
 export async function POST(request: Request) {
   try {

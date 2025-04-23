@@ -17,18 +17,18 @@ export default function CartContent() {
   const { items, removeItem, updateQuantity, totalItems, totalPrice, clearCart } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  
+
   // Calculate the original total price (without discounts)
   const originalTotalPrice = items.reduce((total, item) => {
     return total + (item.price * item.quantity);
   }, 0);
-  
+
   // Calculate the total discount
   const totalDiscount = originalTotalPrice - totalPrice;
-  
+
   // Delivery charges
   const deliveryCharge = totalPrice >= 499 ? 0 : 29;
-  
+
   // Final amount
   const finalAmount = totalPrice + deliveryCharge;
 
@@ -37,10 +37,10 @@ export default function CartContent() {
       toast.error('Your cart is empty');
       return;
     }
-    
+
     try {
       setIsLoading(true);
-      
+
       // Create order via API
       console.log('Creating payment order...', { amount: finalAmount, currency: 'INR' });
       const response = await fetch('/api/payment/create-order', {
@@ -55,31 +55,44 @@ export default function CartContent() {
         }),
       });
       
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Order creation API error:', response.status, errorText);
+        throw new Error(`Failed to create order: ${response.status}`);
+      }
+
       const responseData = await response.json();
       console.log('Order creation response:', responseData);
-      
-      if (!response.ok || !responseData.success) {
+
+      if (!responseData.success) {
+        console.error('Order creation failed:', responseData.error || 'Unknown error');
         throw new Error(responseData.error || 'Failed to create order');
       }
-      
+
       if (!responseData.key) {
         console.error('Missing Razorpay key in response:', responseData);
         throw new Error('Payment configuration error: Missing API key');
       }
       
+      if (!responseData.orderId) {
+        console.error('Missing order ID in response:', responseData);
+        throw new Error('Payment configuration error: Missing order ID');
+      }
+
       // For development debugging
       console.log('Using Razorpay key:', responseData.key);
-      
+      console.log('Order ID:', responseData.orderId);
+
       // Initialize Razorpay
       const options: RazorpayOptions = {
         key: responseData.key,
         amount: responseData.amount,
-        currency: responseData.currency,
+        currency: responseData.currency || 'INR',
         name: 'Village Mart',
         description: `Order of ${totalItems} items`,
         order_id: responseData.orderId,
         image: '/images/logo.png',
-        handler: function(response) {
+        handler: function (response) {
           console.log('Payment handler response:', response);
           handlePaymentSuccess(response);
         },
@@ -93,7 +106,7 @@ export default function CartContent() {
         },
         // Add error callbacks
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
             console.log('Checkout form closed');
             setIsLoading(false);
             toast.error('Checkout cancelled');
@@ -102,14 +115,14 @@ export default function CartContent() {
       };
 
       console.log('Initializing Razorpay with options:', options);
-      
+
       try {
         await initializeRazorpay(options);
       } catch (razorpayError) {
         console.error('Razorpay initialization error:', razorpayError);
-        toast.error('Failed to initialize payment. Please try again.');
+        toast.error('Failed to initialize payment gateway. Please try again later.');
       }
-      
+
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error(error instanceof Error ? error.message : 'Payment initialization failed. Please try again.');
@@ -117,14 +130,14 @@ export default function CartContent() {
       setIsLoading(false);
     }
   }
-  
+
   async function handlePaymentSuccess(response: any) {
     try {
       console.log('Payment success, verifying payment...', response);
-      
+
       // For testing purposes, simulate success without making the API call
       const isDevelopment = process.env.NODE_ENV === 'development';
-      
+
       if (isDevelopment && !response.razorpay_payment_id) {
         console.log('Development mode: Simulating successful payment');
         toast.success('Payment successful! Your order has been placed.');
@@ -132,8 +145,21 @@ export default function CartContent() {
         router.push('/orders');
         return;
       }
-      
+
+      // Validate payment response
+      if (!response.razorpay_payment_id || !response.razorpay_order_id || !response.razorpay_signature) {
+        console.error('Missing payment response parameters:', response);
+        toast.error('Payment information incomplete. Please try again.');
+        return;
+      }
+
       // Verify payment
+      console.log('Sending verification request with:', {
+        payment_id: response.razorpay_payment_id,
+        order_id: response.razorpay_order_id,
+        has_signature: !!response.razorpay_signature
+      });
+
       const verifyResponse = await fetch('/api/payment/verify', {
         method: 'POST',
         headers: {
@@ -145,15 +171,24 @@ export default function CartContent() {
           razorpay_signature: response.razorpay_signature,
         }),
       });
-      
+
+      if (!verifyResponse.ok) {
+        const errorText = await verifyResponse.text();
+        console.error('Verification API error:', verifyResponse.status, errorText);
+        toast.error('Payment verification failed. Please contact support.');
+        return;
+      }
+
       const verifyData = await verifyResponse.json();
-      
+      console.log('Verification response:', verifyData);
+
       if (verifyData.success) {
         toast.success('Payment successful! Your order has been placed.');
         clearCart();
         router.push('/orders');
       } else {
-        toast.error('Payment verification failed. Please contact support.');
+        console.error('Payment verification failed:', verifyData.error || 'Unknown error');
+        toast.error(verifyData.error || 'Payment verification failed. Please contact support.');
       }
     } catch (error) {
       console.error('Payment verification error:', error);
@@ -185,7 +220,7 @@ export default function CartContent() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       <h1 className="text-2xl font-bold mb-8 text-black">{t('yourCart')}</h1>
-      
+
       <div className="flex flex-col lg:flex-row gap-8">
         {/* Cart Items */}
         <div className="lg:w-2/3">
@@ -193,19 +228,19 @@ export default function CartContent() {
             <div className="p-4 border-b">
               <h2 className="font-medium text-black">{t.rich('items', { count: totalItems })}</h2>
             </div>
-            
+
             <ul className="divide-y divide-gray-200">
               {items.map((item) => (
                 <li key={item.id} className="p-4 flex flex-col sm:flex-row items-center gap-4">
                   <div className="w-20 h-20 relative flex-shrink-0">
-                    <Image 
-                      src={item.image} 
+                    <Image
+                      src={item.image}
                       alt={item.name}
                       fill
                       className="object-cover rounded-md"
                     />
                   </div>
-                  
+
                   <div className="flex-grow">
                     <h3 className="font-medium text-gray-800">{item.name}</h3>
                     <div className="flex items-center mt-1">
@@ -219,30 +254,30 @@ export default function CartContent() {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       onClick={() => updateQuantity(item.id, item.quantity - 1)}
                       className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
                     >
                       <FiMinus size={16} />
                     </button>
-                    
+
                     <span className="w-8 text-center font-medium">{item.quantity}</span>
-                    
-                    <button 
+
+                    <button
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
                       className="w-8 h-8 flex items-center justify-center rounded-full border border-gray-300 text-gray-600 hover:bg-gray-100"
                     >
                       <FiPlus size={16} />
                     </button>
                   </div>
-                  
+
                   <div className="text-right">
                     <div className="font-bold text-primary">
                       {formatPrice((item.discountPrice || item.price) * item.quantity)}
                     </div>
-                    <button 
+                    <button
                       onClick={() => removeItem(item.id)}
                       className="text-red-500 hover:text-red-700 text-sm flex items-center mt-1"
                     >
@@ -254,7 +289,7 @@ export default function CartContent() {
               ))}
             </ul>
           </div>
-          
+
           <div className="mt-4">
             <Link href="/">
               <Button variant="outline" className="text-sm">
@@ -264,7 +299,7 @@ export default function CartContent() {
             </Link>
           </div>
         </div>
-        
+
         {/* Order Summary */}
         <div className="lg:w-1/3">
           {/* Price Details */}
@@ -277,7 +312,7 @@ export default function CartContent() {
                 <span className="text-black">Price ({totalItems} items)</span>
                 <span className="text-black">₹{originalTotalPrice}</span>
               </div>
-              
+
               {totalDiscount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-black">Discount</span>
@@ -289,7 +324,7 @@ export default function CartContent() {
                 <span className="text-black">Coupons for you</span>
                 <span className="text-gray-500">−</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-black">Delivery Charges</span>
                 {deliveryCharge === 0 ? (
@@ -298,14 +333,14 @@ export default function CartContent() {
                   <span className="text-black">₹{deliveryCharge}</span>
                 )}
               </div>
-              
+
               <div className="border-t pt-3 mt-3">
                 <div className="flex justify-between font-bold text-lg">
                   <span className="text-black">Total Amount</span>
                   <span className="text-black">₹{finalAmount}</span>
                 </div>
               </div>
-              
+
               {totalDiscount > 0 && (
                 <div className="pt-2 text-green-600 font-medium">
                   You will save ₹{totalDiscount} on this order
@@ -313,30 +348,30 @@ export default function CartContent() {
               )}
             </div>
           </div>
-          
+
           {/* Order Summary */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="font-bold text-lg mb-4 text-black">{t('orderSummary')}</h2>
-            
+
             <div className="space-y-3 mb-4">
               <div className="flex justify-between">
                 <span className="text-black">{t('subtotal')}</span>
                 <span className="text-black">{formatPrice(totalPrice)}</span>
               </div>
-              
+
               <div className="flex justify-between">
                 <span className="text-black">{t('deliveryFee')}</span>
                 <span className="text-black">{totalPrice >= 499 ? t('free') : formatPrice(29)}</span>
               </div>
-              
+
               {totalPrice < 499 && (
                 <div className="text-sm text-gray-600">
-                  {t.rich('freeDeliveryMessage', { 
-                    amount: formatPrice(499 - totalPrice) 
+                  {t.rich('freeDeliveryMessage', {
+                    amount: formatPrice(499 - totalPrice)
                   })}
                 </div>
               )}
-              
+
               <div className="border-t pt-3 mt-3">
                 <div className="flex justify-between font-bold">
                   <span className="text-black">{t('total')}</span>
@@ -346,9 +381,9 @@ export default function CartContent() {
                 </div>
               </div>
             </div>
-            
-            <Button 
-              className="w-full py-3" 
+
+            <Button
+              className="w-full py-3"
               onClick={handleCheckout}
               disabled={isLoading}
             >
@@ -359,4 +394,4 @@ export default function CartContent() {
       </div>
     </div>
   );
-} 
+}
